@@ -5,8 +5,8 @@ from figures import *
 from lights import *
 from materials import *
 
-width = 512
-height = 512
+width = 256
+height = 256
 
 pygame.init()
 
@@ -17,30 +17,25 @@ raytracer = Raytracer(screen)
 
 #Se puede usar cualquier formato de imagen.
 #hdri-hub.com
-raytracer.envMap = pygame.image.load("images/day.jpg")
+raytracer.envMap = pygame.image.load("images/castle.jpg")
 raytracer.rtClearColor(0.25,0.25,0.25)
 
 #Carga de texturas
 ballTexture = pygame.image.load("images/Jabulani.jpg")
-flowTexture = pygame.image.load("images/flow.jpg")
-rubixTexture = pygame.image.load("images/rubix.jpg")
 
 #Carga de materiales
-rugbyBall = Material(texture = ballTexture, spec = 20, ks = 0.01)
-reflectFlow = Material(texture = flowTexture, spec = 64, ks = 0.1, matType= REFLECTIVE)
-rubix = Material(texture = rubixTexture, spec = 64, ks = 0.1, matType= TRANSPARENT)
+reflectFlow = Material(texture = ballTexture, spec = 64, ks = 0.1, matType= OPAQUE)
+c2 = Material(diffuse=(0.15,0.467,0.7), spec = 64, ks = 0.1, matType= OPAQUE)
 
 
+#Colocacion de figuras
+raytracer.scene.append(Ellipsoid(position = (5,5.5,-12), radii = (1.2,0.75,1), material = reflectFlow))
+raytracer.scene.append(Ellipsoid(position = (-3.5,5.25,-12), radii = (1.35,1,1), material = reflectFlow))
+raytracer.scene.append(Ellipsoid(position = (-1.75,2.5,-10), radii = (1,0.55,1), material = reflectFlow))
 
-#Colocacion de plano base
-#raytracer.scene.append(Plane(position=(0,-2,0), normal = (0,1,-0.02), material = c1))
-
-#Colocacion de cápsulas
-raytracer.scene.append(Ellipsoid(position = (-1.2,-1,-5), radii = (1, 1.5, 0.2), material = rubix))
-raytracer.scene.append(Ellipsoid(position = (1,1.5,-5), radii = (1.35, 0.6, 1.5), material = rugbyBall))
-raytracer.scene.append(Ellipsoid(position = (0,-0.5,-10), radii = (1.25,2,1), material = reflectFlow))
-
-
+raytracer.scene.append(AABB(position = (4.96,4.85,-12), size = (0.5,0.5,0.5), material = c2))
+raytracer.scene.append(AABB(position = (-3.475,4.45,-12), size = (0.6,0.6,0.6), material = c2))
+raytracer.scene.append(AABB(position = (-1.745,2,-10), size = (0.4,0.4,0.4), material = c2))
 
 #iluminacion minima del ambiente
 raytracer.lights.append(AmbientLight(intensity=0.3))
