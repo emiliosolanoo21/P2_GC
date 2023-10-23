@@ -240,3 +240,157 @@ class Ellipsoid(Shape):
                          texcoords= (u,v),
                          obj = self)
 
+class Triangle(Shape):
+    def __init__(self, verts, material):
+        super().__init__(self.calculate_center(verts), material)
+        self.verts = verts
+        self.normal = self.calculate_normal()
+        
+    def calculate_center(self, verts):
+        x = sum(vert[0] for vert in verts) / 3
+        y = sum(vert[1] for vert in verts) / 3
+        z = sum(vert[2] for vert in verts) / 3
+        return (x, y, z)
+
+    def calculate_normal(self):
+        v0 = ml.substractV(self.verts[1], self.verts[0])
+        v1 = ml.substractV(self.verts[2], self.verts[0])
+        return ml.normalizeV(ml.crossProd(v0, v1))
+
+    def ray_intersect(self, orig, dir):
+        d = ml.dotProd(dir, self.normal)
+
+        if abs(d) <= 0.0001:
+            return None
+
+        d = -ml.dotProd(self.normal, self.verts[0])
+        num = -ml.dotProd(self.normal, orig) + d
+
+        t = num / d
+
+        if t < 0:
+            return None
+
+        p = ml.addV(orig, ml.VxE(dir, t))
+
+        if not self.is_point_inside(p):
+            return None
+
+        u, v, w = ml.barycentricCoords(self.verts[0], self.verts[1], self.verts[2], p)
+
+        return Intercept(distance=t,
+                        point=p,
+                        normal=self.normal,
+                        texcoords=(u, v, w),
+                        obj=self)
+
+    def is_point_inside(self, point):
+        for i in range(3):
+            edge = ml.substractV(self.verts[(i + 1) % 3], self.verts[i])
+            vp = ml.substractV(point, self.verts[i])
+            c = ml.crossProd(edge, vp)
+            if ml.dotProd(self.normal, c) < 0:
+                return False
+        return True
+
+""" class Cylinder(Shape):
+    def __init__(self, position, radius, height, material):
+        self.radius = radius
+        self.height = height
+        super().__init__(position, material)
+
+    def ray_intersect(self, orig, dir):
+        orig = ml.substractV(orig, self.position)
+        dir = dir
+
+        a = dir[0] ** 2 + dir[2] ** 2
+        b = 2 * (dir[0] * orig[0] + dir[2] * orig[2])
+        c = orig[0] ** 2 + orig[2] ** 2 - self.radius ** 2
+
+        dis = b ** 2 - 4 * a * c
+
+        if dis < 0:
+            return None
+        
+        t1 = (-b - sqrt(dis)) / (2 * a)
+        t2 = (-b + sqrt(dis)) / (2 * a)
+
+        y1 = orig[1] + t1 * dir[1]
+        y2 = orig[1] + t2 * dir[1]
+
+        bias = 0.01
+
+        if not ((-self.height / 2) - bias <= y1 <= (self.height / 2) + bias) and not ((-self.height / 2) - bias <= y2 <= (self.height / 2) + bias):
+            return None
+        
+        theta = atan2(orig[2], orig[0])
+        u = (theta + pi) / (2 * pi)
+        v = (y1 + self.height / 2) / self.height
+
+        if not (0 <= u <= 1) or not (0 <= v <= 1):
+            return None
+        
+        t = min(t1, t2)
+        point = ml.addV(orig, ml.VxE(dir, t))
+
+        normal = ml.normalizeV((point[0] - self.position[0], 0, point[2] - self.position[2]))
+
+        return Intercept(distance=t, 
+                         point=point, 
+                         normal=normal, 
+                         texcoords=(u,v), 
+                         obj=self) """
+
+class Cylinder(Shape):
+    def __init__(self, position, radius, height, material):
+        self.radius = radius
+        self.height = height
+        super().__init__(position, material)
+
+    def ray_intersect(self, orig, dir):
+        orig = ml.substractV(orig, self.position)
+        dir = dir
+
+        a = dir[0] ** 2 + dir[2] ** 2
+        b = 2 * (dir[0] * orig[0] + dir[2] * orig[2])
+        c = orig[0] ** 2 + orig[2] ** 2 - self.radius ** 2
+
+        discriminant = b ** 2 - 4 * a * c
+
+        if discriminant < 0:
+            return None
+
+        t1 = (-b - sqrt(discriminant)) / (2 * a)
+        t2 = (-b + sqrt(discriminant)) / (2 * a)
+
+        y1 = orig[1] + t1 * dir[1]
+        y2 = orig[1] + t2 * dir[1]
+
+        bias = 0.01
+
+        is_t1_in_range = (-self.height / 2) - bias <= y1 <= (self.height / 2) + bias
+        is_t2_in_range = (-self.height / 2) - bias <= y2 <= (self.height / 2) + bias
+
+        if not (is_t1_in_range or is_t2_in_range):
+            return None
+
+        theta = atan2(orig[2], orig[0])
+        u = (theta + pi) / (2 * pi)
+        v = (y1 + self.height / 2) / self.height
+
+        is_u_in_range = 0 <= u <= 1
+        is_v_in_range = 0 <= v <= 1
+
+        if not (is_u_in_range and is_v_in_range):
+            return None
+
+        t = min(t1, t2)
+        point = ml.addV(orig, ml.VxE(dir, t))
+
+        normal = ml.normalizeV((point[0] - self.position[0], 0, point[2] - self.position[2]))
+
+        return Intercept(distance=t,
+                         point=point,
+                         normal=normal,
+                         texcoords=(u, v),
+                         obj=self)
